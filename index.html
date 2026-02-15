@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>鼻毛危機一発</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f0f0f0;
+            font-family: sans-serif;
+            margin-top: 20px;
+            user-select: none;
+            cursor: url('tweezers.png') 0 0, auto; 
+            transition: background-color 0.5s ease, box-shadow 0.5s ease; 
+            
+            overflow-x: hidden; 
+            overflow-y: auto;
+            min-height: 100vh;
+            touch-action: pan-y;
+        }
+
+        /* --- ゲーミングモード時の背景 --- */
+        @keyframes partyBg {
+            0% { background-color: #ff9a9e; }
+            25% { background-color: #fecfef; }
+            50% { background-color: #a1c4fd; }
+            75% { background-color: #c2e9fb; }
+            100% { background-color: #ff9a9e; }
+        }
+        .party-mode {
+            animation: partyBg 0.5s linear infinite !important;
+        }
+
+        /* --- くしゃみ前兆の画面揺れ --- */
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            10% { transform: translate(-1px, -2px) rotate(-1deg); }
+            20% { transform: translate(-3px, 0px) rotate(1deg); }
+            30% { transform: translate(3px, 2px) rotate(0deg); }
+            40% { transform: translate(1px, -1px) rotate(1deg); }
+            50% { transform: translate(-1px, 2px) rotate(-1deg); }
+            60% { transform: translate(-3px, 1px) rotate(0deg); }
+            70% { transform: translate(3px, 1px) rotate(-1deg); }
+            80% { transform: translate(-1px, -1px) rotate(1deg); }
+            90% { transform: translate(1px, 2px) rotate(0deg); }
+            100% { transform: translate(1px, -2px) rotate(-1deg); }
+        }
+        .shaking {
+            animation: shake 0.5s infinite;
+        }
+
+        #start-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+        #start-btn {
+            padding: 20px 40px;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            background-color: #ff4757;
+            color: white;
+            border: none;
+            border-radius: 10px;
+        }
+
+        /* --- 振り子の手 --- */
+        .hand-wrapper {
+            position: fixed;
+            top: -40px; 
+            width: 150px; 
+            transform-origin: top center; 
+            pointer-events: none; 
+            z-index: 5; 
+            transition: top 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+        }
+        .hand-wrapper.has-item {
+            top: 10px; 
+        }
+        .hand-wrapper img {
+            width: 100%;
+            display: block;
+            pointer-events: none;
+        }
+        #hand-left {
+            left: 5%;
+            animation: swingLeft 4s ease-in-out infinite; 
+        }
+        #hand-right {
+            right: 5%;
+            animation: swingRight 4s ease-in-out infinite;
+        }
+        #hand-right img {
+            transform: scaleX(-1); 
+        }
+
+        @keyframes swingLeft {
+            0%, 100% { transform: rotate(25deg); }
+            50% { transform: rotate(-25deg); }
+        }
+        @keyframes swingRight {
+            0%, 100% { transform: rotate(-25deg); }
+            50% { transform: rotate(25deg); }
+        }
+
+        /* --- アイテムのアイコン --- */
+        .item-icon {
+            position: absolute;
+            bottom: -10px; 
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 50px;
+            pointer-events: auto; 
+            cursor: pointer;
+            display: none;
+            filter: drop-shadow(0px 0px 8px rgba(255,255,255,0.9));
+            z-index: 10;
+        }
+        .item-pop {
+            animation: popIcon 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes popIcon {
+            0% { transform: translateX(-50%) scale(0); }
+            80% { transform: translateX(-50%) scale(1.2); }
+            100% { transform: translateX(-50%) scale(1); }
+        }
+
+        /* --- 下からにょきっと出る鼻 --- */
+        .appearing-nose {
+            position: fixed;
+            bottom: -150px; 
+            height: 150px; 
+            z-index: 6; 
+            mix-blend-mode: multiply; 
+            opacity: 0.9;
+            pointer-events: auto; 
+            cursor: pointer; 
+            animation: appearFromBottom 6s cubic-bezier(0.68, -0.55, 0.27, 1.55) infinite;
+        }
+
+        #nose-left {
+            left: 10%;
+        }
+        #nose-right {
+            right: 10%;
+            transform: scaleX(-1); 
+            animation-delay: 3s; 
+        }
+
+        @keyframes appearFromBottom {
+            0%, 100% { bottom: -160px; } 
+            20%, 80% { bottom: -20px; }  
+        }
+
+        #game-container {
+            position: relative;
+            width: 450px; 
+            max-width: 90vw; 
+            height: auto;
+            margin-bottom: 30px;
+        }
+        #nose-image {
+            width: 100%;
+            display: block;
+            pointer-events: none;
+            position: relative;
+            z-index: 10;
+        }
+        
+        #nose-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: red;
+            opacity: 0; 
+            mix-blend-mode: multiply; 
+            pointer-events: none;
+            z-index: 15;
+            transition: opacity 0.5s ease;
+        }
+
+        .hanage {
+            position: absolute;
+            width: 6px;  
+            height: 60px; 
+            background-color: #111;
+            border-radius: 3px;
+            transform-origin: top center;
+            z-index: 20; 
+            cursor: url('tweezers.png') 0 0, grab; 
+        }
+        .hanage:active {
+            cursor: url('tweezers.png') 0 0, grabbing;
+        }
+
+        /* ★ 荒ぶる鼻毛（動くフェーズと止まるフェーズを制御） */
+        @keyframes restlessHair {
+            0% { margin-left: -20px; margin-top: -10px; }
+            100% { margin-left: 20px; margin-top: 10px; }
+        }
+        .moving-hair {
+            /* 通常時はアニメーションなし（止まっている） */
+            transition: margin 0.2s ease; 
+        }
+        .moving-hair.active-moving {
+            /* 動くフェーズの時だけアニメーション */
+            animation: restlessHair 0.15s infinite alternate ease-in-out;
+        }
+
+        /* ボス毛 */
+        .boss-hair {
+            width: 14px !important;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+        }
+
+        /* 茶柱 */
+        .golden-hair {
+            background-color: #ffd700 !important;
+            box-shadow: 0 0 8px 3px rgba(255, 215, 0, 0.8);
+        }
+
+        /* ゲーミング鼻毛 */
+        @keyframes rainbowHue {
+            0% { filter: hue-rotate(0deg); }
+            100% { filter: hue-rotate(360deg); }
+        }
+        .gaming-hair {
+            background: linear-gradient(to bottom, #ff0000, #00ff00, #0000ff);
+            animation: rainbowHue 0.5s linear infinite;
+            box-shadow: 0 0 10px magenta;
+        }
+
+        /* 鼻くそ */
+        .with-booger::after {
+            content: '';
+            position: absolute;
+            bottom: 12px;
+            left: -5px;
+            width: 16px;
+            height: 14px;
+            background-color: #8b9a46;
+            border-radius: 50% 60% 40% 50%;
+            box-shadow: inset -2px -2px 4px rgba(0,0,0,0.3);
+            z-index: 25;
+            pointer-events: none;
+        }
+
+        #message {
+            margin-top: 10px;
+            font-size: 24px;
+            font-weight: bold;
+            position: relative; 
+            z-index: 110; 
+            text-align: center; 
+            min-height: 36px;
+        }
+        #reset-btn {
+            margin-top: 20px;
+            margin-bottom: 50px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            display: none;
+            position: relative; 
+            z-index: 110; 
+        }
+
+        /* 偽エラーポップアップ */
+        #fake-error-popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #fff;
+            border: 2px solid #333;
+            border-radius: 8px;
+            padding: 20px 30px;
+            z-index: 5000;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            text-align: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        #fake-error-popup h3 {
+            color: #d32f2f;
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+        #fake-error-popup p {
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 20px;
+        }
+        #fake-error-popup button {
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            padding: 8px 25px;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        #countdown-display {
+            position: fixed;
+            top: 45%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            font-size: 180px;
+            font-weight: 900;
+            color: #ffeb3b;
+            text-shadow: 
+                6px 6px 0px #d32f2f,
+                -6px -6px 0px #d32f2f,
+                6px -6px 0px #d32f2f,
+                -6px 6px 0px #d32f2f,
+                15px 15px 25px rgba(0,0,0,0.6);
+            z-index: 3000;
+            pointer-events: none;
+            opacity: 0;
+            font-family: 'Arial Black', sans-serif;
+            font-style: italic;
+        }
+
+        .countdown-anim {
+            animation: popCountdown 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        @keyframes popCountdown {
+            0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+            30% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+        }
+
+        #confetti-container {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 2500;
+            overflow: hidden;
+        }
+
+        .confetti {
+            position: absolute;
+            width: 12px;
+            height: 24px;
+            top: -30px;
+            animation: fall linear forwards;
+        }
+
+        @keyframes fall {
+            to {
+                transform: translateY(110vh) rotate(720deg);
+            }
+        }
+
+        #blackout-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 90; 
+            transition: opacity 0.5s ease;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="start-screen">
+        <button id="start-btn" onclick="startGame()">ゲームスタート<br><span style="font-size:16px;">（音が出ます）</span></button>
+    </div>
+
+    <div id="countdown-display"></div>
+    <div id="confetti-container"></div>
+    <div id="blackout-overlay"></div>
+
+    <div id="fake-error-popup">
+        <h3>⚠️ システム重大エラー</h3>
+        <p>抜かれた鼻毛の恨みがあなたに向けられています。<br>鼻毛からの襲来に備えてください。(Error: 0xDEADBEEF)</p>
+        <button onclick="closeFakeError()">OK</button>
+    </div>
+
+    <div id="hand-left" class="hand-wrapper">
+        <img src="hand.png" alt="左手">
+        <div id="item-left" class="item-icon" onmousedown="clickItem('left')" ontouchstart="clickItem('left'); event.preventDefault();"></div>
+    </div>
+    <div id="hand-right" class="hand-wrapper">
+        <img src="hand.png" alt="右手">
+        <div id="item-right" class="item-icon" onmousedown="clickItem('right')" ontouchstart="clickItem('right'); event.preventDefault();"></div>
+    </div>
+
+    <img id="nose-left" class="appearing-nose" src="walking_nose.jpg" alt="左から出る鼻">
+    <img id="nose-right" class="appearing-nose" src="walking_nose.jpg" alt="右から出る鼻">
+
+    <h1>鼻毛危機一発</h1>
+    
+    <div id="game-container">
+        <img id="nose-image" src="nose.jpg" alt="メインの鼻">
+        <div id="nose-overlay"></div> 
+        <div id="hanage-container"></div>
+    </div>
+
+    <div id="message">鼻毛を掴んで、下に引っこ抜いてください。</div>
+    <button id="reset-btn" onclick="resetGame()">もう一度遊ぶ</button>
+
+    <script>
+        const bgm = new Audio('bgm.mp3');
+        bgm.loop = true;
+        bgm.volume = 0.1;
+        
+        const bgmEdm = new Audio('edm.mp3');
+        bgmEdm.loop = true;
+        bgmEdm.volume = 0.2;
+
+        const sePull = new Audio('pull.mp3');
+        const seSafe = new Audio('safe.mp3');
+        const seOut = new Audio('out.mp3');
+        const seWalking = new Audio('walking.mp3');
+        const seClear = new Audio('clear.mp3');
+
+        let totalHanageCount = 12;
+        const container = document.getElementById('hanage-container');
+        const messageEl = document.getElementById('message');
+        const resetBtn = document.getElementById('reset-btn');
+        const startScreen = document.getElementById('start-screen');
+        const noseOverlay = document.getElementById('nose-overlay');
+        const blackoutOverlay = document.getElementById('blackout-overlay');
+        
+        let outIndex;
+        let gameOver = false;
+        let pulledCount = 0; 
+        
+        let hasBarrier = false;
+        let whiteIndex = -1;
+        let feintIndex = -1;
+        let multiplyIndex = -1;
+        let boogerIndex = -1;
+        let bossIndex = -1; 
+        let evadeIndex = -1;
+        let gamingIndex = -1;
+        let errorPopupIndex = -1;
+        let movingIndex = -1; 
+        let longHairs = [];
+
+        let spawnInterval = null;
+        let itemTimerLeft = null;
+        let itemTimerRight = null;
+        let movingHairTimer = null; // ★ 荒ぶる鼻毛のタイマー
+        
+        let idleTime = 0;
+        let idleInterval = null;
+
+        document.addEventListener('mousedown', resetIdleTimer);
+        document.addEventListener('touchstart', resetIdleTimer, {passive: true});
+
+        document.querySelectorAll('.appearing-nose').forEach(nose => {
+            nose.addEventListener('click', function() {
+                seWalking.currentTime = 0; 
+                seWalking.play();
+                resetIdleTimer();
+            });
+            nose.addEventListener('touchstart', function(e) {
+                seWalking.currentTime = 0; 
+                seWalking.play();
+                resetIdleTimer();
+            }, {passive: true});
+        });
+
+        function resetIdleTimer() {
+            if (gameOver) return;
+            idleTime = 0;
+            document.body.classList.remove('shaking');
+        }
+
+        function startIdleTimer() {
+            if (idleInterval) clearInterval(idleInterval);
+            idleTime = 0;
+            idleInterval = setInterval(() => {
+                if (gameOver) {
+                    clearInterval(idleInterval);
+                    document.body.classList.remove('shaking');
+                    return;
+                }
+                idleTime++;
+                if (idleTime === 10) {
+                    document.body.classList.add('shaking');
+                    messageEl.textContent = "鼻がムズムズしてきた…！（早く抜いて！）";
+                    messageEl.style.color = "red";
+                }
+                if (idleTime >= 13) {
+                    triggerSneeze("🤧ハクション！！！💥 放置しすぎて吹き飛んだ！");
+                }
+            }, 1000);
+        }
+
+        // ★ 追加：荒ぶる鼻毛の動く/止まるを切り替える関数
+        function startMovingHairTimer() {
+            if (movingHairTimer) clearInterval(movingHairTimer);
+            let isMovingPhase = false;
+            movingHairTimer = setInterval(() => {
+                if (gameOver) return;
+                isMovingPhase = !isMovingPhase;
+                document.querySelectorAll('.moving-hair').forEach(hair => {
+                    if (isMovingPhase) {
+                        hair.classList.add('active-moving');
+                    } else {
+                        hair.classList.remove('active-moving');
+                    }
+                });
+            }, 1500); // 1.5秒ごとにフェーズ切り替え
+        }
+
+        function triggerSneeze(msg) {
+            gameOver = true;
+            bgm.pause();
+            bgmEdm.pause();
+            seOut.currentTime = 0;
+            seOut.play();
+            document.body.classList.remove('shaking');
+            document.body.classList.remove('party-mode');
+            blackoutOverlay.style.opacity = 1;
+            noseOverlay.style.opacity = 0;
+            messageEl.textContent = msg;
+            messageEl.style.color = "#ff4757";
+            resetBtn.style.display = 'block';
+        }
+
+        function closeFakeError() {
+            document.getElementById('fake-error-popup').style.display = 'none';
+        }
+
+        function startGame() {
+            startScreen.style.display = 'none';
+            bgm.play().catch(e => console.log("BGM再生エラー", e));
+            const noseImage = document.getElementById('nose-image');
+            if (noseImage.complete) initGame();
+            else noseImage.onload = initGame;
+        }
+
+        function resetGame() {
+            bgm.currentTime = 0;
+            bgm.play();
+            bgmEdm.pause();
+            bgmEdm.currentTime = 0;
+            document.body.classList.remove('party-mode');
+            closeFakeError();
+            initGame();
+        }
+
+        function popRandom(arr) {
+            if(arr.length === 0) return -1;
+            return arr.splice(Math.floor(Math.random() * arr.length), 1)[0];
+        }
+
+        function initGame() {
+            container.innerHTML = '';
+            document.getElementById('confetti-container').innerHTML = '';
+            gameOver = false;
+            pulledCount = 0;
+            totalHanageCount = 12; 
+            bgm.playbackRate = 1.0;
+            hasBarrier = false; 
+            
+            resetBtn.style.display = 'none';
+            messageEl.textContent = "鼻毛を掴んで、下に引っこ抜いてください。";
+            messageEl.style.color = "black";
+            messageEl.style.textShadow = "none"; 
+            
+            document.body.style.backgroundColor = "#f0f0f0";
+            document.body.style.boxShadow = "none"; 
+            noseOverlay.style.opacity = 0;
+            blackoutOverlay.style.opacity = 0; 
+
+            if (spawnInterval) clearInterval(spawnInterval);
+            document.getElementById('item-left').style.display = 'none';
+            document.getElementById('item-right').style.display = 'none';
+            document.getElementById('item-left').dataset.type = '';
+            document.getElementById('item-right').dataset.type = '';
+            document.getElementById('hand-left').classList.remove('has-item');
+            document.getElementById('hand-right').classList.remove('has-item');
+            
+            outIndex = Math.floor(Math.random() * totalHanageCount);
+            whiteIndex = Math.random() < 0.3 ? Math.floor(Math.random() * totalHanageCount) : -1;
+            if (whiteIndex === outIndex) whiteIndex = -1;
+
+            let available = [];
+            for (let i = 0; i < totalHanageCount; i++) {
+                if (i !== outIndex && i !== whiteIndex) available.push(i);
+            }
+
+            feintIndex = popRandom(available);
+            multiplyIndex = popRandom(available);
+            boogerIndex = popRandom(available);
+            bossIndex = popRandom(available);
+            evadeIndex = popRandom(available);
+            errorPopupIndex = popRandom(available);
+            movingIndex = popRandom(available); 
+            
+            gamingIndex = Math.random() < 0.15 ? popRandom(available) : -1;
+
+            longHairs = [];
+            let numLong = Math.floor(Math.random() * 2) + 1;
+            for(let i=0; i<numLong; i++){
+                longHairs.push(Math.floor(Math.random() * totalHanageCount));
+            }
+
+            for (let i = 0; i < totalHanageCount; i++) {
+                createHair(i);
+            }
+
+            startItemSpawner(); 
+            startIdleTimer();
+            startMovingHairTimer(); // ★ 動く鼻毛のタイマー開始
+        }
+
+        function startItemSpawner() {
+            spawnInterval = setInterval(() => {
+                if (gameOver) return;
+                if (Math.random() < 0.3) {
+                    const side = Math.random() < 0.5 ? 'left' : 'right';
+                    let rand = Math.random();
+                    let type = 'xray';
+                    if (rand > 0.25 && rand <= 0.5) type = 'tissue';
+                    else if (rand > 0.5 && rand <= 0.75) type = 'cream';
+                    else if (rand > 0.75) type = 'pepper'; 
+                    spawnItemIcon(side, type);
+                }
+            }, 3000);
+        }
+
+        function spawnItemIcon(side, type) {
+            const iconEl = document.getElementById(`item-${side}`);
+            const handWrapper = document.getElementById(`hand-${side}`);
+            if (iconEl.style.display === 'block') return; 
+
+            if (type === 'xray') iconEl.textContent = '🔍';
+            else if (type === 'tissue') iconEl.textContent = '🧻';
+            else if (type === 'cream') iconEl.textContent = '🧴'; 
+            else if (type === 'pepper') iconEl.textContent = '🌶️';
+
+            iconEl.style.display = 'block';
+            iconEl.dataset.type = type;
+            
+            handWrapper.classList.add('has-item');
+            iconEl.classList.remove('item-pop');
+            void iconEl.offsetWidth; 
+            iconEl.classList.add('item-pop');
+
+            const timer = setTimeout(() => {
+                iconEl.style.display = 'none';
+                iconEl.dataset.type = '';
+                handWrapper.classList.remove('has-item'); 
+            }, 3000);
+
+            if (side === 'left') itemTimerLeft = timer;
+            else itemTimerRight = timer;
+        }
+
+        function triggerClear(customMessage, canFake = true) {
+            gameOver = true;
+            bgm.pause(); 
+            bgmEdm.pause();
+            
+            if (canFake && Math.random() < 0.1) {
+                setTimeout(() => {
+                    document.body.style.backgroundColor = "#ffd700"; 
+                    document.body.style.boxShadow = "none";
+                    document.body.classList.remove('party-mode');
+                    noseOverlay.style.opacity = 0; 
+                    messageEl.textContent = "GAME CLEAR!! ハズレを完全回避！";
+                    messageEl.style.color = "#d35400";
+                    messageEl.style.textShadow = "none";
+                    seClear.currentTime = 0;
+                    seClear.play();
+                    startConfetti();
+
+                    setTimeout(() => {
+                        seOut.currentTime = 0;
+                        seOut.play();
+                        document.body.style.backgroundColor = "#ffcccc";
+                        document.getElementById('confetti-container').innerHTML = '';
+                        blackoutOverlay.style.opacity = 1;
+                        messageEl.textContent = "…と思ったら根元が赤かった！！ GAME OVER🤡";
+                        messageEl.style.color = "red";
+                        resetBtn.style.display = 'block';
+                    }, 2500);
+                }, 300);
+            } else {
+                setTimeout(() => {
+                    document.body.style.backgroundColor = "#ffd700"; 
+                    document.body.style.boxShadow = "none";
+                    document.body.classList.remove('party-mode');
+                    noseOverlay.style.opacity = 0; 
+                    messageEl.textContent = customMessage || "GAME CLEAR!! ハズレを完全回避！";
+                    messageEl.style.color = "#d35400";
+                    messageEl.style.textShadow = "none";
+                    resetBtn.style.display = 'block';
+                    seClear.currentTime = 0;
+                    seClear.play();
+                    startConfetti();
+                }, 300); 
+            }
+        }
+
+        window.clickItem = function(side) {
+            if(gameOver) return;
+            resetIdleTimer();
+            const iconEl = document.getElementById(`item-${side}`);
+            const handWrapper = document.getElementById(`hand-${side}`);
+            const type = iconEl.dataset.type;
+            if(!type) return;
+
+            iconEl.style.display = 'none';
+            iconEl.dataset.type = '';
+            handWrapper.classList.remove('has-item');
+            
+            if(side === 'left') clearTimeout(itemTimerLeft);
+            if(side === 'right') clearTimeout(itemTimerRight);
+
+            if (type === 'pepper') {
+                triggerSneeze("🌶️罠のコショウだ！ハクション！！！💥");
+                return;
+            }
+
+            seSafe.currentTime = 0;
+            seSafe.play();
+
+            if (type === 'xray') {
+                if (outIndex !== -1 && container.children[outIndex] && container.children[outIndex].style.display !== 'none' && !container.children[outIndex].dataset.pulled) {
+                    const badHair = container.children[outIndex];
+                    const origColor = badHair.style.backgroundColor || '#111';
+                    
+                    badHair.style.backgroundColor = 'red';
+                    badHair.style.boxShadow = "0 0 10px 5px red";
+                    
+                    setTimeout(() => {
+                        if (!gameOver && badHair.style.display !== 'none') {
+                            badHair.style.backgroundColor = origColor;
+                            badHair.style.boxShadow = "none";
+                        }
+                    }, 500);
+
+                    messageEl.textContent = "🔍透視メガネ！一瞬だけ赤い鼻毛が見えた！";
+                    messageEl.style.color = "#d35400";
+                } else {
+                    messageEl.textContent = "🔍透視したけど、ハズレの毛はもう無いみたいだ！";
+                    messageEl.style.color = "gray";
+                }
+            } else if (type === 'tissue') {
+                if (boogerIndex !== -1 && container.children[boogerIndex] && container.children[boogerIndex].style.display !== 'none') {
+                    container.children[boogerIndex].classList.remove('with-booger');
+                    boogerIndex = -1; 
+                    messageEl.textContent = "🧻ティッシュ！鼻くそを綺麗に拭き取った！";
+                    messageEl.style.color = "#27ae60";
+                } else {
+                    messageEl.textContent = "🧻ティッシュを使ったが、鼻くそはもう無かった！";
+                    messageEl.style.color = "gray";
+                }
+            } else if (type === 'cream') {
+                let availableHairs = [];
+                const allHairs = container.children;
+                for(let i=0; i<allHairs.length; i++) {
+                    if(i !== outIndex && allHairs[i].style.display !== 'none' && !allHairs[i].dataset.pulled) {
+                        availableHairs.push(allHairs[i]);
+                    }
+                }
+                
+                availableHairs.sort(() => Math.random() - 0.5);
+                let removed = 0;
+                let limit = Math.min(5, availableHairs.length);
+                
+                for(let i=0; i<limit; i++) {
+                    let h = availableHairs[i];
+                    h.style.display = 'none';
+                    h.dataset.pulled = 'true';
+                    pulledCount++;
+                    removed++;
+                }
+
+                if (removed > 0) {
+                    messageEl.textContent = `🧴除毛剤！一気に${removed}本の毛を処理した！`;
+                    messageEl.style.color = "#8e44ad";
+                } else {
+                    messageEl.textContent = `🧴除毛剤を使ったが、処理できる毛がなかった！`;
+                    messageEl.style.color = "gray";
+                }
+
+                let targetPulls = outIndex === -1 ? totalHanageCount : totalHanageCount - 1;
+                let remaining = targetPulls - pulledCount;
+                if (remaining > 0) showCountdown(remaining);
+
+                if (pulledCount >= targetPulls) {
+                    triggerClear(null, true);
+                }
+            }
+        }
+
+        function createHair(index) {
+            const noseImage = document.getElementById('nose-image');
+            const imgW = noseImage.clientWidth > 0 ? noseImage.clientWidth : 450; 
+            const imgH = noseImage.clientHeight > 0 ? noseImage.clientHeight : 450; 
+
+            const hanage = document.createElement('div');
+            hanage.classList.add('hanage');
+            
+            if (index === bossIndex) {
+                hanage.classList.add('boss-hair');
+                hanage.dataset.bossHp = '5'; 
+            }
+            if (index === gamingIndex) {
+                hanage.classList.add('gaming-hair');
+            }
+            if (index === movingIndex) {
+                hanage.classList.add('moving-hair');
+            }
+
+            if (index === whiteIndex) {
+                hanage.style.backgroundColor = "#ddd";
+            }
+            if (index === boogerIndex) {
+                hanage.classList.add('with-booger');
+            }
+
+            if (index !== outIndex && index !== whiteIndex && index !== gamingIndex && Math.random() < 0.04) {
+                hanage.classList.add('golden-hair');
+                hanage.dataset.isGolden = 'true';
+                if (Math.random() < 0.5) {
+                    hanage.dataset.isFakeGolden = 'true'; 
+                }
+            }
+
+            const isLeft = index % 2 === 0;
+            const baseX = isLeft ? (imgW * 0.35) : (imgW * 0.65); 
+            const randomX = baseX + (Math.random() * (imgW * 0.16) - (imgW * 0.08)); 
+            const baseY = imgH * 0.82; 
+            const randomY = baseY + (Math.random() * (imgH * 0.04) - (imgH * 0.02));
+
+            hanage.style.left = `${randomX}px`;
+            hanage.style.top = `${randomY}px`;
+            const angle = (Math.random() * 50 - 25);
+            hanage.style.transform = `rotate(${angle}deg)`;
+
+            setupDrag(hanage, index, randomY);
+
+            if (index === evadeIndex) {
+                const dodge = () => {
+                    if (gameOver || hanage.dataset.pulled) return;
+                    const currentLeft = parseFloat(hanage.style.left);
+                    hanage.style.left = (currentLeft + (Math.random() > 0.5 ? 40 : -40)) + 'px';
+                    hanage.style.transition = 'left 0.1s ease-out';
+                };
+                hanage.addEventListener('mouseover', dodge);
+                hanage.addEventListener('touchstart', dodge, {passive: true});
+            }
+
+            container.appendChild(hanage);
+        }
+
+        function setupDrag(element, index, initialTop) {
+            let isDragging = false;
+            let startY = 0;
+            let currentY = initialTop;
+            
+            let pullThreshold = 50;
+            if (index === bossIndex || longHairs.includes(index)) pullThreshold = 150;
+
+            const getEventY = (e) => {
+                return e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+            };
+
+            const startDrag = (e) => {
+                if (gameOver || element.dataset.pulled) return;
+                isDragging = true;
+                startY = getEventY(e);
+                element.style.transition = 'none';
+                sePull.currentTime = 0;
+                sePull.play();
+            };
+
+            const moveDrag = (e) => {
+                if (!isDragging) return;
+                e.preventDefault(); 
+                const y = getEventY(e);
+                const deltaY = y - startY;
+                if (deltaY > 0) {
+                    currentY = initialTop + deltaY;
+                    element.style.top = `${currentY}px`;
+
+                    if (index === feintIndex && deltaY > 20) {
+                        element.style.backgroundColor = "red";
+                    }
+                }
+            };
+
+            const endDrag = (e) => {
+                if (!isDragging) return;
+                isDragging = false;
+                
+                const y = e.type.includes('touch') ? e.changedTouches[0].clientY : e.clientY;
+                const deltaY = y - startY;
+                
+                if (deltaY > pullThreshold) {
+                    if (index === bossIndex && parseInt(element.dataset.bossHp) > 1) {
+                        let hp = parseInt(element.dataset.bossHp) - 1;
+                        element.dataset.bossHp = hp;
+                        element.style.transition = 'top 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'; 
+                        element.style.top = `${initialTop}px`;
+                        messageEl.textContent = `極太毛！抜けねぇ！あと${hp}回！`;
+                        messageEl.style.color = "purple";
+                    } else {
+                        pullHanage(element, index);
+                    }
+                } else {
+                    element.style.transition = 'top 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'; 
+                    element.style.top = `${initialTop}px`;
+                    
+                    if (index === feintIndex) {
+                        element.style.backgroundColor = "#111";
+                    }
+                }
+            };
+
+            element.addEventListener('mousedown', startDrag);
+            document.addEventListener('mousemove', moveDrag, { passive: false });
+            document.addEventListener('mouseup', endDrag);
+
+            element.addEventListener('touchstart', startDrag, { passive: false });
+            document.addEventListener('touchmove', moveDrag, { passive: false });
+            document.addEventListener('touchend', endDrag);
+        }
+
+        function getRandomColor() {
+            const letters = '89ABCDEF'; 
+            let color = '#';
+            for (let i = 0; i < 6; i++) {
+                color += letters[Math.floor(Math.random() * letters.length)];
+            }
+            return color;
+        }
+
+        function showCountdown(num) {
+            const display = document.getElementById('countdown-display');
+            display.textContent = num;
+            display.classList.remove('countdown-anim');
+            void display.offsetWidth; 
+            display.classList.add('countdown-anim');
+        }
+
+        function startConfetti() {
+            const container = document.getElementById('confetti-container');
+            container.innerHTML = '';
+            const colors = ['#fce18a', '#ff726d', '#b48def', '#f4306d', '#42a5f5', '#66bb6a', '#ffffff'];
+            for (let i = 0; i < 150; i++) {
+                const confetti = document.createElement('div');
+                confetti.classList.add('confetti');
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                confetti.style.animationDelay = (Math.random() * 1.5) + 's';
+                container.appendChild(confetti);
+            }
+        }
+
+        function pullHanage(element, index) {
+            if (gameOver || element.dataset.pulled) return;
+
+            element.dataset.pulled = 'true'; 
+
+            if (element.dataset.isGolden === 'true') {
+                if (element.dataset.isFakeGolden === 'true') {
+                    element.classList.remove('golden-hair');
+                    messageEl.textContent = "金色…と思ったらただの染めムラだ！ ";
+                    messageEl.style.color = "#b8860b";
+                    seSafe.currentTime = 0;
+                    seSafe.play();
+                    pulledCount++;
+                    element.style.transition = 'top 0.5s ease-in, opacity 0.5s ease-in';
+                    element.style.top = `${parseFloat(element.style.top) + 200}px`; 
+                    element.style.opacity = '0'; 
+                    setTimeout(() => { element.style.display = 'none'; }, 500);
+                } else {
+                    element.style.display = 'none';
+                    triggerClear("✨シークレット！「ゴールデン毛」だ！即クリア！✨", false);
+                    return;
+                }
+            } else if (index === outIndex) {
+                if (hasBarrier) {
+                    hasBarrier = false;
+                    outIndex = -1; 
+                    document.body.style.boxShadow = "none"; 
+                    pulledCount++;
+                    
+                    seSafe.currentTime = 0;
+                    seSafe.play();
+
+                    element.style.backgroundColor = "red"; 
+                    document.body.style.backgroundColor = getRandomColor();
+                    
+                    element.style.transition = 'top 0.5s ease-in, opacity 0.5s ease-in';
+                    element.style.top = `${parseFloat(element.style.top) + 200}px`; 
+                    element.style.opacity = '0'; 
+                    setTimeout(() => { element.style.display = 'none'; }, 500);
+
+                    messageEl.textContent = "バリア発動！赤い鼻毛を無効化した！";
+                    messageEl.style.color = "blue";
+                    messageEl.style.textShadow = "0px 0px 5px rgba(0, 0, 255, 0.5)";
+
+                } else {
+                    bgm.pause();
+                    bgmEdm.pause();
+                    seOut.currentTime = 0;
+                    seOut.play();
+
+                    element.style.backgroundColor = "red";
+                    element.style.height = "200px"; 
+                    element.style.zIndex = "100"; 
+
+                    blackoutOverlay.style.opacity = 1; 
+                    noseOverlay.style.opacity = 0;
+                    document.body.classList.remove('party-mode');
+                    
+                    messageEl.textContent = "GAME OVER!! 赤い鼻毛を引いてしまった！";
+                    messageEl.style.color = "#ff4757";
+                    messageEl.style.textShadow = "0px 0px 10px rgba(255, 71, 87, 0.8)";
+                    
+                    resetBtn.style.display = 'block';
+                    gameOver = true;
+                    return; 
+                }
+            } else {
+                let isSpecialMessage = false;
+
+                if (index === whiteIndex) {
+                    if (Math.random() < 0.5) {
+                        bgm.pause();
+                        bgmEdm.pause();
+                        seOut.currentTime = 0;
+                        seOut.play();
+
+                        element.style.backgroundColor = "red";
+                        element.style.height = "200px"; 
+                        element.style.zIndex = "100"; 
+
+                        blackoutOverlay.style.opacity = 1; 
+                        noseOverlay.style.opacity = 0;
+                        document.body.classList.remove('party-mode');
+                        
+                        messageEl.textContent = "GAME OVER!! 呪いの白髪だった！";
+                        messageEl.style.color = "#ff4757";
+                        messageEl.style.textShadow = "0px 0px 10px rgba(255, 71, 87, 0.8)";
+                        
+                        resetBtn.style.display = 'block';
+                        gameOver = true;
+                        return; 
+                    } else {
+                        seSafe.currentTime = 0;
+                        seSafe.play();
+                        pulledCount++;
+                        hasBarrier = true;
+                        document.body.style.boxShadow = "inset 0 0 30px 15px rgba(100, 200, 255, 0.6)"; 
+                        messageEl.textContent = `白髪を引いた！バリア獲得！ (${pulledCount}本目)`;
+                        messageEl.style.color = "#0056b3";
+                        messageEl.style.textShadow = "none";
+                        isSpecialMessage = true;
+                    }
+                } else if (index === multiplyIndex) {
+                    seSafe.currentTime = 0;
+                    seSafe.play();
+                    pulledCount++;
+                    
+                    messageEl.textContent = `増殖毛だ！鼻毛が10本増えた！ (${pulledCount}本目)`;
+                    messageEl.style.color = "#8e44ad";
+                    messageEl.style.textShadow = "none";
+                    isSpecialMessage = true;
+
+                    let startIdx = totalHanageCount;
+                    totalHanageCount += 10;
+                    for (let i = startIdx; i < totalHanageCount; i++) {
+                        createHair(i);
+                    }
+                } else if (index === boogerIndex) {
+                    seSafe.currentTime = 0;
+                    seSafe.play();
+                    pulledCount++;
+
+                    messageEl.textContent = `うわっ！鼻くそ付きだ…  (${pulledCount}本目)`;
+                    messageEl.style.color = "#556b2f"; 
+                    messageEl.style.textShadow = "none";
+                    isSpecialMessage = true;
+                    if (!document.body.classList.contains('party-mode')) document.body.style.backgroundColor = "#dcedc1";
+                } else if (index === gamingIndex) {
+                    seSafe.currentTime = 0;
+                    seSafe.play();
+                    pulledCount++;
+                    
+                    bgm.pause();
+                    bgmEdm.play().catch(e => console.log(e));
+                    document.body.classList.add('party-mode');
+
+                    messageEl.textContent = `🌈 ゲーミング鼻毛！！パリピモード突入！ (${pulledCount}本目)`;
+                    messageEl.style.color = "#ff1493";
+                    messageEl.style.textShadow = "0 0 5px #fff";
+                    isSpecialMessage = true;
+                } else if (index === errorPopupIndex) {
+                    seSafe.currentTime = 0;
+                    seSafe.play();
+                    pulledCount++;
+                    document.getElementById('fake-error-popup').style.display = 'block';
+                    messageEl.textContent = `セーフ！…だけど何かヤバいの出た！？ (${pulledCount}本目)`;
+                    messageEl.style.color = "#c0392b";
+                    isSpecialMessage = true;
+                } else if (index === movingIndex) {
+                    seSafe.currentTime = 0;
+                    seSafe.play();
+                    pulledCount++;
+                    messageEl.textContent = `荒ぶる鼻毛を抜いた！ セーフ！ (${pulledCount}本目)`;
+                    messageEl.style.color = "#34495e";
+                    isSpecialMessage = true;
+                }
+
+                if (!isSpecialMessage && element.dataset.isFakeGolden !== 'true') {
+                    seSafe.currentTime = 0;
+                    seSafe.play();
+                    pulledCount++;
+                    messageEl.textContent = `セーフ！ (${pulledCount}本目)`;
+                    messageEl.style.color = "black";
+                    messageEl.style.textShadow = "none";
+                }
+
+                if (index !== boogerIndex && !document.body.classList.contains('party-mode')) {
+                    document.body.style.backgroundColor = getRandomColor();
+                }
+
+                let newOpacity = (pulledCount / totalHanageCount) * 0.6;
+                noseOverlay.style.opacity = newOpacity;
+
+                element.style.transition = 'top 0.5s ease-in, opacity 0.5s ease-in';
+                element.style.top = `${parseFloat(element.style.top) + 200}px`; 
+                element.style.opacity = '0'; 
+                setTimeout(() => { element.style.display = 'none'; }, 500);
+            }
+
+            let targetPulls = outIndex === -1 ? totalHanageCount : totalHanageCount - 1;
+            let remaining = targetPulls - pulledCount;
+            
+            if (remaining > 0) {
+                showCountdown(remaining);
+            }
+
+            if (remaining <= 5) bgm.playbackRate = 1.1;
+            if (remaining <= 3) bgm.playbackRate = 1.3;
+            if (remaining <= 1) bgm.playbackRate = 1.6;
+
+            if (pulledCount >= targetPulls) {
+                triggerClear(null, true);
+            }
+        }
+    </script>
+</body>
+</html>
